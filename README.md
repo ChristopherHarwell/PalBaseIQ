@@ -1,224 +1,160 @@
-# PalBaseIQ - Palworld Base Optimization System
+# PalBaseIQ
 
-A sophisticated Go-based optimization system for Palworld base layout and item placement. This system uses advanced algorithms including A* pathfinding and simulated annealing to create optimal base layouts that maximize efficiency, accessibility, and space utilization.
+A Palworld Base Optimization & Pathing Visualizer
 
-## Features
+A application designed to introspect live memory from the game **Palworld** to optimize base layouts and resolve pathing inefficiencies in real time.
 
-### 🏗️ **3D Base Management**
-- Full 3D coordinate system supporting Palworld's base dimensions
-- Support for Palbox placement with 2x2x2 or 2x3x2 tile footprints
-- Height limit support up to 16 tiles vertically
-- Collision detection and spatial validation
+---
 
-### 🧭 **Advanced Pathfinding**
-- A* algorithm implementation for optimal pathfinding
-- 6-directional movement (up, down, left, right, forward, backward)
-- Obstacle avoidance and terrain penalties
-- Path cost optimization for Pal movement efficiency
+## 🧩 Problem Statement
 
-### 🎯 **Intelligent Item Placement**
-- Priority-based placement system
-- Related item proximity optimization
-- Workflow efficiency analysis
-- Compactness and space utilization scoring
+Palworld players often struggle with inefficient base layouts, NPC (Pal) pathing issues, and poor resource flow. The game lacks tooling to:
 
-### 🔧 **Optimization Algorithms**
-- Simulated annealing for global optimization
-- Greedy initial placement for fast convergence
-- Multi-objective scoring (pathfinding, efficiency, compactness)
-- Configurable optimization parameters
+- Visualize and understand Pal movement behavior
+- Diagnose workstation and object placement bottlenecks
+- Optimize base layout for productivity and traversal
 
-## Supported Item Types
+These inefficiencies reduce overall base performance and user experience.
 
-- **Palbox** - Central base hub (2x2x2 or 2x3x2)
-- **Pal Beds** - Resting areas for Pals
-- **Food Box** - Food storage
-- **Food Plots** - Farming areas
-- **Power Generator** - Energy production
-- **Accumulator** - Energy storage
-- **Workbench** - Crafting stations
-- **Storage** - Item storage
-- **Furnace** - Smelting operations
-- **Cooking Pot** - Food preparation
-- **Medicine Workbench** - Medical crafting
-- **Breeding Farm** - Pal breeding
-- **Incubator** - Egg hatching
-- **Pal Sphere Workbench** - Sphere crafting
+---
 
-## Installation
+## 🧠 Solution Overview
 
-```bash
-# Clone the repository
-git clone <repository-url>
-cd PalBaseIQ
+This project enables **real-time visibility** into your Palworld base and NPC behaviors by:
 
-# Install dependencies
-go mod tidy
+1. Reading and decoding live game memory
+2. Mapping Pal and object positions in a structured format
+3. Serving this data via a clean API layer
+4. Visualizing everything through a web interface
 
-# Build the application
-go build -o palbaseiq cmd/main.go
+---
 
-# Run the application
-./palbaseiq
+## 🛠️ Architecture
+
+```mermaid
+graph TD
+    subgraph Game Environment
+        Palworld[Palworld Game Process]
+    end
+
+    subgraph Rust Memory Reader
+        RustProc[Rust Memory Scanner]
+        RustProc --> Palworld
+    end
+
+    subgraph gRPC Bridge
+        RustProc -- gRPC --> GoServer
+    end
+
+    subgraph Go API Server
+        GoServer[Go Server]
+        GoServer -->|REST API| Frontend
+        GoServer -->|WebSocket| Frontend
+    end
+
+    subgraph Client
+        Frontend[Frontend UI]
+    end
 ```
 
-## Usage
+⸻
 
-### Basic Usage
+📦 Components
 
-```go
-package main
+🦀 Rust Memory Reader
+	•	Reads memory from Palworld using process_vm_readv or ptrace
+	•	Decodes object and entity data into usable structures
+	•	Exposes structured data via gRPC
 
-import (
-    "palbaseiq/pkg/types"
-    "palbaseiq/pkg/optimizer"
-)
+🐹 Go API Server
+	•	Bridges gRPC data from Rust into REST and WebSocket endpoints
+	•	Handles client communication and frontend integration
+	•	Performs lightweight data transformation and caching
 
-func main() {
-    // Create a base with dimensions
-    base := types.NewBase(20, 16, 20) // width x height x depth
-    
-    // Define items to place
-    items := []*types.Item{
-        {
-            ID: "palbox_1",
-            Type: types.ItemTypePalbox,
-            Bounds: types.BoundingBox{Width: 2, Height: 2, Depth: 2},
-            Priority: 100, // Highest priority
-        },
-        // Add more items...
-    }
-    
-    // Create optimizer
-    opt := optimizer.NewPlacementOptimizer(base)
-    
-    // Configure optimization
-    config := optimizer.DefaultConfig()
-    config.MaxIterations = 1000
-    
-    // Run optimization
-    optimizedBase, score, err := opt.OptimizePlacement(items, config)
-    if err != nil {
-        panic(err)
-    }
-    
-    // Use optimized base
-    fmt.Printf("Optimization score: %.2f\n", score.TotalScore)
-}
-```
+💻 Frontend UI
+	•	Provides a live visual map of the base
+	•	Highlights Pal paths, workstation usage, and spatial relationships
+	•	Offers optimization suggestions based on collected data
 
-### Advanced Configuration
+⸻
 
-```go
-config := &optimizer.OptimizationConfig{
-    MaxIterations:     2000,
-    Temperature:       150.0,
-    CoolingRate:       0.98,
-    MinTemperature:    0.05,
-    PathfindingWeight: 0.5,  // Emphasize pathfinding
-    EfficiencyWeight:  0.3,  // Balance efficiency
-    CompactnessWeight: 0.2,  // Less emphasis on compactness
-}
-```
+✨ Features (Planned)
+	•	📍 Real-time Pal and object position tracking
+	•	🧠 Pathing bottleneck detection and reroute suggestions
+	•	📐 Base layout heatmaps and workstation efficiency scores
+	•	💬 WebSocket updates for live UI syncing
+	•	📊 Historical tracking of base performance
 
-## Architecture
+⸻
 
-### Core Components
+🚀 Getting Started
 
-1. **Types Package** (`pkg/types/`)
-   - Base and Item data structures
-   - 3D position and bounding box management
-   - Spatial validation and collision detection
+⚠️ Requires root privileges or appropriate capabilities on Linux
 
-2. **Pathfinding Package** (`pkg/pathing/`)
-   - A* algorithm implementation
-   - Graph construction and traversal
-   - Path cost calculation and optimization
+	1.	Launch Palworld
+	2.	Run the Rust scanner binary with target PID
+	3.	Start the Go API server
+	4.	Open the frontend in your browser
 
-3. **Optimizer Package** (`pkg/optimizer/`)
-   - Simulated annealing optimization
-   - Multi-objective scoring system
-   - Placement evaluation and improvement
+⸻
 
-### Key Algorithms
+📚 License
 
-#### A* Pathfinding
-- **Heuristic Functions**: Manhattan distance, Euclidean distance
-- **Cost Calculation**: Distance + terrain penalties + obstacle proximity
-- **Path Optimization**: Minimizes total movement cost for Pals
+MIT License. Built for educational and personal use. Please respect the game’s terms of service and do not use this in multiplayer environments.
 
-#### Simulated Annealing
-- **Temperature Schedule**: Exponential cooling with configurable parameters
-- **Perturbation Strategy**: Random item relocation with greedy repositioning
-- **Acceptance Criteria**: Boltzmann probability for uphill moves
+⸻
 
-#### Multi-Objective Scoring
-- **Pathfinding Score**: Accessibility and movement efficiency
-- **Efficiency Score**: Related item proximity and workflow optimization
-- **Compactness Score**: Space utilization and layout density
+🤝 Contributing
 
-## Performance Considerations
+This project is in early development. If you’re interested in contributing to memory mapping, optimization logic, or UI design, feel free to open an issue or PR.
 
-### Optimization Parameters
-- **MaxIterations**: 500-2000 (trade-off between quality and speed)
-- **Temperature**: 100-200 (higher = more exploration)
-- **CoolingRate**: 0.95-0.99 (slower = more thorough search)
+⸻
 
-### Base Size Guidelines
-- **Small Base** (10x16x10): ~100-500 iterations
-- **Medium Base** (20x16x20): ~500-1000 iterations
-- **Large Base** (30x16x30): ~1000-2000 iterations
-
-## Example Output
-
-```
-PalBaseIQ - Palworld Base Optimization System
-=============================================
-Starting base optimization...
-Base dimensions: 20x16x20
-Items to place: 42
-Optimization iterations: 500
-
-Optimization Results:
-====================
-Total Score: 847.32
-Pathfinding Score: 234.56
-Efficiency Score: 312.78
-Compactness Score: 299.98
-Occupancy: 15.2%
-
-Optimized Item Placements:
-==========================
-palbox: (10, 0, 10) (Priority: 100)
-pal_bed_1: (5, 0, 5) (Priority: 90)
-food_box_1: (8, 0, 8) (Priority: 80)
-power_generator_1: (12, 0, 12) (Priority: 85)
-...
-
-Pathfinding Analysis:
-====================
-Palbox location: (10, 0, 10)
-Path to food_box: 2.45 cost (5 steps)
-Path to power_generator: 1.87 cost (3 steps)
-Path to workbench: 3.12 cost (7 steps)
-Average path cost: 2.48
-Reachable items: 4/4
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Implement your changes
-4. Add tests for new functionality
-5. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
-- Inspired by Palworld's base building mechanics
-- Uses established algorithms from computational geometry and optimization
-- Built with Go for performance and simplicity 
+## Directory Layout
+PalBaseIQ/
+├── README.md
+├── .gitignore
+├── go-api/                         # Go server (API + gRPC client)
+│   ├── cmd/
+│   │   └── server/                 # Entrypoint: main.go
+│   ├── internal/
+│   │   ├── grpcclient/            # gRPC client code for talking to Rust
+│   │   ├── handlers/              # HTTP/WebSocket route handlers
+│   │   └── models/                # Shared data structs
+│   ├── proto/                     # Protobuf-generated Go code (from shared proto)
+│   ├── go.mod
+│   └── go.sum
+│
+├── rust-scanner/                  # Rust binary to read Palworld memory
+│   ├── src/
+│   │   ├── main.rs
+│   │   ├── memory/                # Memory parsing logic
+│   │   ├── process/               # PID + memory region discovery
+│   │   └── grpc_server.rs         # Exposes game data via gRPC
+│   ├── build.rs
+│   ├── Cargo.toml
+│   └── proto/                     # Protobuf definitions used in gRPC
+│
+├── frontend/                      # Web frontend (React, Vue, etc.)
+│   ├── public/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── services/              # Calls Go API via REST/WebSocket
+│   │   └── types/
+│   ├── vite.config.ts             # (or next.config.js / etc.)
+│   ├── tsconfig.json
+│   └── package.json
+│
+├── shared-proto/                  # Shared protobuf schema (used by Rust + Go)
+│   └── palworld.proto
+│
+├── scripts/                       # Dev and deploy scripts
+│   ├── build.sh
+│   ├── dev.sh
+│   └── run_all.sh
+│
+└── docker/                        # (optional) container setup
+    ├── Dockerfile.rust
+    ├── Dockerfile.go
+    └── docker-compose.yml
